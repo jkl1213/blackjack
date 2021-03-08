@@ -1,0 +1,141 @@
+import numpy as np
+import pandas as pd
+import random
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+num_decks = 1
+card_types = ['A',2,3,4,5,6,7,8,9,10,'J','Q','K']
+suits = ['C','D','H','S']
+
+
+def make_decks(num_decks):
+    card_types = ['A',2,3,4,5,6,7,8,9,10,'J','Q','K']
+    suits = ['C','D','H','S']
+    new_deck = []
+    idx = 0
+    for i in range(num_decks):
+        for j in suits:
+            for k in card_types:
+                new_deck.append([idx,j,k])
+                idx = idx + 1
+                
+    #random.shuffle(new_deck)
+    return new_deck
+    
+#draw a card from deck
+def draw_card(deck,n):
+    cards = []
+    for i in range(n):
+        #print('len(deck):',len(deck))
+        cards_idx = list(np.array(deck)[:,0])
+        #print('cards_idx:',cards_idx)
+        random_card_idx = int(random.choice(cards_idx))
+        #print('random_card_idx:',random_card_idx)
+        random_card = deck[cards_idx.index(str(random_card_idx))]
+        deck.remove(random_card)
+        cards.append(random_card)
+    return deck, cards
+a_deck = make_decks(1)
+print(draw_card(a_deck,3)[1])
+#print(len(a_deck))
+
+def get_values(cards):
+    cards_values_arr = np.array(cards)[:,2]
+    total_value = 0
+    ace = 0
+    for i in cards_values_arr:
+        if i in ['J','Q','K']:
+            total_value += 10
+        elif i in ['2','3','4','5','6','7','8','9','10']:
+            total_value += int(i)
+        else:
+            ace += 1
+            
+    for i in range(ace):
+        if (total_value + 11) > 21:
+            total_value += 1
+        else:
+            total_value +=11
+
+    return cards_values_arr, total_value
+
+a_deck = make_decks(1)
+get_values(draw_card(a_deck,2)[1])
+
+
+def dealers_turn(deck, dealers_card):
+    
+    while get_values(dealers_card)[1] < 17:
+        deck, dealers_additional_card = draw_card(deck,1)
+        dealers_card.append(dealers_additional_card[0])
+    
+    return deck, dealers_card
+
+def players_turn(deck, players_card):
+    
+    deck, players_additional_card = draw_card(deck,1)
+    players_card.append(players_additional_card[0])
+    
+    return deck, players_card
+
+
+deck = make_decks(1)
+deck, dealers_card = draw_card(deck,1)
+dealers_card
+
+#simulating 10000 blackjack games
+import random
+win = 0
+lose = 0
+draw = 0
+#modes of strategies (randomness = 0,1,2)
+randomness = 1
+for i in range(10000):
+    
+    
+    #starting round
+    deck = make_decks(1)
+    deck, dealers_card = draw_card(deck,1)
+    deck, players_card = draw_card(deck,2)
+    #print("dealers_card: ", get_values(dealers_card)[0], "total_value: ",get_values(dealers_card)[1])
+    #print("players_card: ", get_values(players_card)[0], "total_value: ",get_values(players_card)[1])
+    
+    if randomness == 0:
+    #always hit until 16 or higher
+        while get_values(players_card)[1] < 16:
+            deck, players_card = players_turn(deck, players_card)
+    
+    elif randomness == 1:
+        #hit once at random
+        if random.random() >= 0.5:
+            deck, players_card = players_turn(deck, players_card)
+    
+    elif randomness == 2:
+        #hit until hand at least 12
+        while get_values(players_card)[1] < 12:
+            deck, players_card = players_turn(deck, players_card)
+            
+    player = get_values(players_card)[1]
+    #print("players_total: ",player)
+    #dealers turn
+    deck, a = dealers_turn(deck, dealers_card)
+    dealer = get_values(dealers_card)[1]
+    #print("dealers_total: ",dealer)
+    
+    if player > 21:
+        lose += 1
+    elif dealer > 21:
+        win += 1
+    elif player < dealer:
+        lose += 1
+    elif player > dealer:
+        win += 1
+    elif player == dealer:
+        draw += 1
+    
+print("win percentage: ", win/(win+lose+draw))
+print("lose percentage: ", lose/(win+lose+draw))
+print("draw percentage: ", draw/(win+lose+draw))
+    
+    
